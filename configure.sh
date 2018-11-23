@@ -116,11 +116,11 @@ function configure() {
 # Parse arguments
 #
 
-arg_steamrt32=""
-arg_steamrt64=""
+arg_steamrt32="docker:steam-proton-dev32"
+arg_steamrt64="docker:steam-proton-dev"
 arg_no_steamrt=""
 arg_ffmpeg=""
-arg_build_name=""
+arg_build_name="ED_Proton_3.16"
 arg_help=""
 invalid_args=""
 function parse_args() {
@@ -229,7 +229,7 @@ usage() {
   exit 1;
 }
 
-[[ $# -gt 0 ]] || usage info
+# [[ $# -gt 0 ]] || usage info
 parse_args "$@" || usage err
 [[ -z $arg_help ]] || usage info
 
