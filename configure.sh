@@ -116,11 +116,11 @@ function configure() {
 # Parse arguments
 #
 
-arg_steamrt32=""
+arg_steamrt32="docker:wine-native-dev32"
 arg_steamrt64=""
 arg_no_steamrt=""
 arg_ffmpeg=""
-arg_build_name=""
+arg_build_name="staging_native"
 arg_help=""
 invalid_args=""
 function parse_args() {
@@ -229,7 +229,7 @@ usage() {
   exit 1;
 }
 
-[[ $# -gt 0 ]] || usage info
+# [[ $# -gt 0 ]] || usage info
 parse_args "$@" || usage err
 [[ -z $arg_help ]] || usage info
 
@@ -237,7 +237,8 @@ parse_args "$@" || usage err
 if [[ -n $arg_no_steamrt && (-n $arg_steamrt32 || -n $arg_steamrt64) ]]; then
     die "Cannot specify a Steam Runtime SDK as well as --no-steam-runtime"
 elif [[ -z $arg_no_steamrt && ( -z $arg_steamrt32 || -z $arg_steamrt64 ) ]]; then
-    die "Must specify either --no-steam-runtime or both --steam-runtime32 and --steam-runtime64"
+#    die "Must specify either --no-steam-runtime or both --steam-runtime32 and --steam-runtime64"
+:
 fi
 
 configure "$arg_steamrt64" "$arg_steamrt32"
