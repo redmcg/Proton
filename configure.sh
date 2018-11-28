@@ -1,4 +1,3 @@
-#!/bin/bash
 
 set -eu
 
@@ -34,6 +33,7 @@ cmd()      { showcmd "$@"; "$@"; }
 
 THIS_COMMAND="$0 $*" # For printing, not evaling
 MAKEFILE="./Makefile"
+MAKEALLSH="./make_all.sh"
 
 function check_steamrt_image() {
   local type="$1"
@@ -108,8 +108,16 @@ function configure() {
   echo >> "$MAKEFILE" ""
   echo >> "$MAKEFILE" "include \$(SRCDIR)/build/makefile_base.mak"
 
-  stat "Created $MAKEFILE, now run make to build."
+  stat "Created $MAKEFILE."
   stat "  See README.md for make targets and instructions"
+
+  echo >  "$MAKEALLSH" "#!/usr/bin/env bash"
+  echo >> "$MAKEALLSH"
+  echo >> "$MAKEALLSH" "make -j4"
+
+  chmod +x "$MAKEALLSH"
+
+  stat "Created $MAKEALLSH, run this to build all."
 }
 
 #
