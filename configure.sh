@@ -120,7 +120,7 @@ arg_steamrt32="docker:wine-native-dev32"
 arg_steamrt64=""
 arg_no_steamrt=""
 arg_ffmpeg=""
-arg_build_name="staging_native"
+arg_build_name="master_native"
 arg_help=""
 invalid_args=""
 function parse_args() {
