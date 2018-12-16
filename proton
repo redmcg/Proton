@@ -550,6 +550,17 @@ def dump_dbg_scripts():
             f.write("\t\"" + wine_path + "\" \"${@:-${DEF_CMD[@]}}\"\n")
     os.chmod(tmpdir + "run", 0o755)
 
+
+def vdfworkaround():
+    scriptdir = os.path.dirname(os.path.realpath(__file__))
+    head, SteamGameId = os.path.split(env["STEAM_COMPAT_DATA_PATH"])
+    vdfname = "evaluatorscript_" + SteamGameId + ".vdf"
+    vdfpath = scriptdir + "/legacycompat/" + vdfname
+    dstpath = steamdir + "/legacycompat/" + vdfname
+    if os.path.isfile(vdfpath):
+        shutil.copyfile(vdfpath, dstpath)
+        os.chmod(dstpath, 0o444)
+
 def run():
     if "PROTON_DUMP_DEBUG_COMMANDS" in env:
         try:
@@ -560,6 +571,10 @@ def run():
         #probably a batch script or something, hopefully start.exe can handle it
         run_wine([wine_path, "start", "/unix"] + sys.argv[2:])
     else:
+        if "legacycompat/iscriptevaluator.exe" in sys.argv[2]:
+            del env["WINEESYNC"]
+        if "legacycompat\evaluatorscript_" in sys.argv[3]:
+            vdfworkaround()
         run_wine([wine_path] + sys.argv[2:])
 
 if sys.version_info[0] == 2:
