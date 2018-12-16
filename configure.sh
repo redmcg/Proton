@@ -135,7 +135,7 @@ arg_steamrt32="docker:steam-proton-dev32"
 arg_steamrt64="docker:steam-proton-dev"
 arg_no_steamrt=""
 arg_ffmpeg=""
-arg_build_name="ED_Proton_3.16"
+arg_build_name="Proton 3.16-5 Beta ED"
 arg_help=""
 invalid_args=""
 function parse_args() {
