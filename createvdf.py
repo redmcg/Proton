@@ -29,8 +29,8 @@ class VDFFile:
         self.tab(depth)
         self.f.write("\"{}\"\n".format(name))
         self.tab(depth)
-        self.f.write("{\n") 
-    
+        self.f.write("{\n")
+
     def write_close(self, depth):
         self.tab(depth)
         self.f.write("}\n")

@@ -53,7 +53,7 @@ class Package:
     def create(self, destBase):
         destpath = destBase + "/" + self.dest
         if not os.path.exists(destpath):
-            os.makedirs(destpath) 
+            os.makedirs(destpath)
         for packageFile in self.fileList:
             if packageFile.needsCreation(destpath):
                 packageFile.create(destpath)
