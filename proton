@@ -140,7 +140,7 @@ bindir = basedir + "/dist/bin/"
 libdir = basedir + "/dist/lib"
 lib64dir = basedir + "/dist/lib64"
 fontsdir = basedir + "/dist/share/fonts"
-wine_path = bindir + "/wine"
+wine_path = bindir + "/wine64"
 
 #extract if needed
 dist_lock = FileLock(basedir + "/dist.lock", timeout=-1)
