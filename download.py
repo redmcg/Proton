@@ -65,7 +65,7 @@ IF %ERRORLEVEL% == 3010 EXIT /B 0
 EXIT /B %ERRORLEVEL%
 ''')], "DotNet/4.0")
 vcrun2015 = Package([DownloadFile('https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe', 'fdd1e1f0dcae2d0aa0720895eff33b927d13076e64464bb7c7e5843b7667cd14'), DownloadFile('https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe', '5eea714e1f22f1875c1cb7b1738b0c0b1f02aec5ecb95f0fdb1c5171c6cd93a3'), CommandFile('Microsoft Visual C++ 2015 x86.cmd', '''@ECHO OFF
-start /w "" "%~dp0\\vc_redist.x86" /q /norestart
+start /w "" "%~dp0\\vc_redist.x86.exe" /q /norestart
 IF %ERRORLEVEL% == 3010 EXIT /B 0
 EXIT /B %ERRORLEVEL%
 '''), CommandFile('Microsoft Visual C++ 2015 x64.cmd', '''@ECHO OFF
