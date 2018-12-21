@@ -76,10 +76,8 @@ EXIT /B %ERRORLEVEL%
 packages = { "dotnet40": dotnet40, "vcrun2015": vcrun2015 }
 
 def main():
-    scriptdir = os.path.dirname(os.path.realpath(__file__))
-    steambase = scriptdir + "/../.."
-    packageBase = steambase + "/steam/steamapps/common/Steamworks Shared/_CommonRedist"
-    for package in sys.argv[1:]:
+    packageBase = sys.argv[1]
+    for package in sys.argv[2:]:
         packages[package].create(packageBase)
 
 if __name__ == "__main__":
