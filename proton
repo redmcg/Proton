@@ -580,10 +580,10 @@ def run():
         #probably a batch script or something, hopefully start.exe can handle it
         run_wine([wine_path, "start", "/unix"] + sys.argv[2:])
     else:
-        if len(sys.argv) > 2 and "legacycompat/iscriptevaluator.exe" in sys.argv[2]:
-            del env["WINEESYNC"]
-            if len(sys.argv) > 3 and "legacycompat\evaluatorscript_" in sys.argv[3]:
-                vdfworkaround()
+        if len(sys.argv) > 3 and "legacycompat\evaluatorscript_" in sys.argv[3]:
+            if "WINEESYNC" in env:
+                del env["WINEESYNC"]
+            vdfworkaround()
         run_wine([wine_path] + sys.argv[2:])
 
 if sys.version_info[0] == 2:
