@@ -31,6 +31,7 @@ else # (Rest of the file is the else)
 #   STEAMRT64_IMAGE - Name of the image if mode is set
 #   STEAMRT32_MODE  - Same as above for 32-bit container (can be different type)
 #   STEAMRT32_IMAGE - Same as above for 32-bit container
+#   STEAMRT_PATH    - Path to built runtime which contains run.sh
 
 ifeq ($(SRCDIR),)
 	foo := $(error SRCDIR not set, do not include makefile_base directly, run ./configure.sh to generate Makefile)
@@ -71,6 +72,12 @@ ifeq ($(STEAMRT32_MODE),docker)
 	CONTAINER_SHELL32 := $(DOCKER_SHELL_BASE)
 else ifneq ($(STEAMRT32_MODE),)
 	foo := $(error Unrecognized STEAMRT32_MODE $(STEAMRT32_MODE))
+endif
+
+ifneq ($(STEAMRT_PATH),)
+	STEAM_RUNTIME_RUNSH := $(STEAMRT_PATH)/run.sh
+else
+	STEAM_RUNTIME_RUNSH :=
 endif
 
 SELECT_DOCKER_IMAGE :=
@@ -242,8 +249,33 @@ $(DST_DIR):
 
 STEAM_DIR := $(HOME)/.steam/root
 
-DIST_COPY_FILES := toolmanifest.vdf filelock.py proton proton_3.7_tracked_files user_settings.sample.py download.py createvdf.py fixED.sh
-DIST_COPY_TARGETS := $(addprefix $(DST_BASE)/,$(DIST_COPY_FILES))
+TOOLMANIFEST_TARGET := $(addprefix $(DST_BASE)/,toolmanifest.vdf)
+$(TOOLMANIFEST_TARGET): $(addprefix $(SRCDIR)/,toolmanifest.vdf)
+
+FILELOCK_TARGET := $(addprefix $(DST_BASE)/,filelock.py)
+$(FILELOCK_TARGET): $(addprefix $(SRCDIR)/,filelock.py)
+
+PROTON_PY_TARGET := $(addprefix $(DST_BASE)/,proton)
+$(PROTON_PY_TARGET): $(addprefix $(SRCDIR)/,proton)
+
+PROTON37_TRACKED_FILES_TARGET := $(addprefix $(DST_BASE)/,proton_3.7_tracked_files)
+$(PROTON37_TRACKED_FILES_TARGET): $(addprefix $(SRCDIR)/,proton_3.7_tracked_files)
+
+USER_SETTINGS_PY_TARGET := $(addprefix $(DST_BASE)/,user_settings.sample.py)
+$(USER_SETTINGS_PY_TARGET): $(addprefix $(SRCDIR)/,user_settings.sample.py)
+
+DOWNLOAD_PY_TARGET := $(addprefix $(DST_BASE)/,download.py)
+$(DOWNLOAD_PY_TARGET): $(addprefix $(SRCDIR)/,download.py)
+
+CREATE_VDF_PY_TARGET := $(addprefix $(DST_BASE)/,createvdf.py)
+$(CREATE_VDF_PY_TARGET): $(addprefix $(SRCDIR)/,createvdf.py)
+
+FIXED_SH_TARGET := $(addprefix $(DST_BASE)/,fixED.sh)
+$(FIXED_SH_TARGET): $(addprefix $(SRCDIR)/,fixED.sh)
+
+DIST_COPY_TARGETS := $(TOOLMANIFEST_TARGET) $(FILELOCK_TARGET) $(PROTON_PY_TARGET) \
+                     $(PROTON37_TRACKED_FILES_TARGET) $(USER_SETTINGS_PY_TARGET) \
+                     $(DOWNLOAD_PY_TARGET) $(CREATE_VDF_PY_TARGET) $(FIXED_SH_TARGET)
 DIST_VERSION := $(DST_DIR)/version
 DIST_OVR32 := $(DST_DIR)/lib/wine/dxvk/openvr_api_dxvk.dll
 DIST_OVR64 := $(DST_DIR)/lib64/wine/dxvk/openvr_api_dxvk.dll
@@ -255,7 +287,7 @@ DIST_GECKO32 := $(DIST_GECKO_DIR)/$(GECKO32_MSI)
 DIST_GECKO64 := $(DIST_GECKO_DIR)/$(GECKO64_MSI)
 DIST_FONTS := $(DST_DIR)/share/fonts
 
-DIST_TARGETS := $(DIST_COPY_TARGETS) $(DIST_VERSION) $(DIST_OVR32) $(DIST_OVR64) \
+DIST_TARGETS := $(DIST_COPY_TARGETS) $(DIST_OVR32) $(DIST_OVR64) \
                 $(DIST_GECKO32) $(DIST_GECKO64) $(DIST_COMPAT_MANIFEST) $(DIST_LICENSE) \
                 $(DIST_FONTS)
 
@@ -274,10 +306,6 @@ $(DIST_OVR64): $(SRCDIR)/openvr/bin/win64/openvr_api.dll | $(DST_DIR)
 
 $(DIST_COPY_TARGETS): | $(DST_DIR)
 	cp -a $(SRCDIR)/$(notdir $@) $@
-
-$(DIST_VERSION): | $(DST_DIR)
-	date '+%s' > $@
-	cp $(DIST_VERSION) $(DST_BASE)/
 
 $(DIST_COMPAT_MANIFEST): $(COMPAT_MANIFEST_TEMPLATE) $(MAKEFILE_DEP) | $(DST_DIR)
 	sed -r 's|##BUILD_NAME##|$(BUILD_NAME)|' $< > $@
@@ -318,12 +346,12 @@ $(DIST_FONTS): fonts
 ALL_TARGETS += dist
 GOAL_TARGETS += dist
 
-# Only drag in WINE_OUT if they need to be built at all, otherwise this doesn't imply a rebuild of wine.  If wine is in
-# the explicit targets, specify that this should occur after.
-dist: $(DIST_TARGETS) | $(WINE_OUT) $(filter $(MAKECMDGOALS),wine64 wine32 wine) $(DST_DIR)
+dist: $(DIST_TARGETS) wine vrclient lsteamclient dxvk | $(DST_DIR)
+	echo `date '+%s'` `GIT_DIR=$(abspath $(SRCDIR)/.git) git describe --tags` > $(DIST_VERSION)
+	cp $(DIST_VERSION) $(DST_BASE)/
 	rm -rf $(abspath $(DIST_PREFIX)) && \
-	WINEPREFIX=$(abspath $(DIST_PREFIX)) $(WINE_OUT_BIN) wineboot && \
-		WINEPREFIX=$(abspath $(DIST_PREFIX)) $(WINE_OUT_SERVER) -w && \
+	WINEPREFIX=$(abspath $(DIST_PREFIX)) $(STEAM_RUNTIME_RUNSH) $(WINE_OUT_BIN) wineboot && \
+		WINEPREFIX=$(abspath $(DIST_PREFIX)) $(STEAM_RUNTIME_RUNSH) $(WINE_OUT_SERVER) -w && \
 		ln -s $(FONTLINKPATH)/LiberationSans-Regular.ttf $(abspath $(DIST_PREFIX))/drive_c/windows/Fonts/arial.ttf && \
 		ln -s $(FONTLINKPATH)/LiberationSans-Bold.ttf $(abspath $(DIST_PREFIX))/drive_c/windows/Fonts/arialbd.ttf && \
 		ln -s $(FONTLINKPATH)/LiberationSerif-Regular.ttf $(abspath $(DIST_PREFIX))/drive_c/windows/Fonts/times.ttf && \
@@ -345,6 +373,17 @@ install: dist | $(filter-out dist deploy install,$(MAKECMDGOALS))
 	@echo "Installed Proton to "$(STEAM_DIR)/compatibilitytools.d/$(BUILD_NAME)
 	@echo "You may need to restart Steam to select this tool"
 
+.PHONY: module32 module64 module
+
+module32: SHELL = $(CONTAINER_SHELL32)
+module32:
+	cd $(WINE_OBJ32)/dlls/$(module) && make
+
+module64: SHELL = $(CONTAINER_SHELL64)
+module64:
+	cd $(WINE_OBJ64)/dlls/$(module) && make
+
+module: module32 module64
 
 ##
 ## ffmpeg
@@ -631,7 +670,7 @@ WINE32_MAKE_ARGS := \
 
 # 64bit-configure
 $(WINE_CONFIGURE_FILES64): SHELL = $(CONTAINER_SHELL64)
-$(WINE_CONFIGURE_FILES64): $(MAKEFILE_DEP) | $(WINE_OBJ64)
+$(WINE_CONFIGURE_FILES64): $(MAKEFILE_DEP) | faudio64 $(WINE_OBJ64)
 	cd $(dir $@) && \
 		STRIP=$(STRIP_QUOTED) \
 		CFLAGS="-I$(abspath $(TOOLS_DIR64))/include -I$(abspath $(SRCDIR))/contrib/include -g $(COMMON_FLAGS)" \
@@ -646,7 +685,7 @@ $(WINE_CONFIGURE_FILES64): $(MAKEFILE_DEP) | $(WINE_OBJ64)
 
 # 32-bit configure
 $(WINE_CONFIGURE_FILES32): SHELL = $(CONTAINER_SHELL32)
-$(WINE_CONFIGURE_FILES32): $(MAKEFILE_DEP) | $(WINE_OBJ32) $(WINE_ORDER_DEPS32)
+$(WINE_CONFIGURE_FILES32): $(MAKEFILE_DEP) | faudio32 $(WINE_OBJ32)
 	cd $(dir $@) && \
 		STRIP=$(STRIP_QUOTED) \
 		CFLAGS="-I$(abspath $(TOOLS_DIR32))/include -I$(abspath $(SRCDIR))/contrib/include -g $(COMMON_FLAGS)" \

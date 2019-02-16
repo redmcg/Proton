@@ -10,6 +10,7 @@ import sys
 import clang.cindex
 import os
 import re
+import math
 
 sdk_versions = [
     "142",
@@ -23,14 +24,18 @@ sdk_versions = [
     "135a",
     "135",
     "134",
+    "133x",
     "133b",
     "133a",
     "133",
+    "132x",
     "132",
     "131",
+    "130x",
     "130",
     "129a",
     "129",
+    "128x",
     "128",
     "127",
     "126a",
@@ -40,16 +45,21 @@ sdk_versions = [
     "123a",
     "123",
     "122",
+    "121x",
     "121",
     "120",
+    "119x",
     "119",
     "118",
     "117",
+    "116x",
     "116",
     "115",
     "114",
     "113",
+    "112x",
     "112",
+    "111x",
     "111",
     "110",
     "109",
@@ -59,9 +69,17 @@ sdk_versions = [
     "105",
     "104",
     "103",
+    "102x",
     "102",
+    "101x",
     "101",
     "100",
+    "099y",
+    "099x",
+    "099w",
+    "099v",
+    "099u",
+    "next",
 ]
 
 files = [
@@ -106,33 +124,18 @@ files = [
     ("isteamparentalsettings.h", [
         "ISteamParentalSettings"
     ]),
+    ("isteamnetworkingsocketsserialized.h", [
+        "ISteamNetworkingSocketsSerialized"
+    ]),
 ]
 
 aliases = {
-    #Some interface versions are not present in the public SDK
-    #headers, but are actually requested by games. It would be nice
-    #to verify that these interface versions are actually binary
-    #compatible. Lacking that, we hope the next highest version
-    #is compatible.
-    "SteamClient012":["SteamClient013"],
-    "SteamUtils004":["SteamUtils003"], # TimeShift uses SteamUtils003
-
-
-    #leaving these commented-out. let's see if they turn up in practice,
-    #and handle them correctly if so.
-
-#    "SteamFriends011":["SteamFriends010"],
-#    "SteamFriends013":["SteamFriends012"],
-#    "SteamGameServer008":["SteamGameServer007", "SteamGameServer006"],
-#    "SteamMatchMaking004":["SteamMatchMaking003"],
-#    "SteamMatchMaking006":["SteamMatchMaking005"],
-#    "STEAMREMOTESTORAGE_INTERFACE_VERSION004":["STEAMREMOTESTORAGE_INTERFACE_VERSION003"],
-#    "STEAMREMOTESTORAGE_INTERFACE_VERSION008":["STEAMREMOTESTORAGE_INTERFACE_VERSION007"],
-#    "STEAMREMOTESTORAGE_INTERFACE_VERSION010":["STEAMREMOTESTORAGE_INTERFACE_VERSION009"],
-#    "STEAMUGC_INTERFACE_VERSION005":["STEAMUGC_INTERFACE_VERSION004"],
-#    "STEAMUGC_INTERFACE_VERSION007":["STEAMUGC_INTERFACE_VERSION006"],
-#    "SteamUser016":["SteamUser015"],
-#    "STEAMUSERSTATS_INTERFACE_VERSION009":["STEAMUSERSTATS_INTERFACE_VERSION008"],
+    #these interfaces are undocumented and binary compatible
+    "SteamUtils004":["SteamUtils003"],
+    "SteamUtils002":["SteamUtils001"],
+    "SteamGameServer008":["SteamGameServer007","SteamGameServer006"],
+    "SteamNetworkingSocketsSerialized002":["SteamNetworkingSocketsSerialized001"],
+    "STEAMAPPS_INTERFACE_VERSION001":["SteamApps001"],
 }
 
 # these structs are manually confirmed to be equivalent
@@ -416,7 +419,7 @@ def handle_method(cfile, classname, winclassname, cppname, method, cpp, cpp_h, e
         parambytes = 4 #_this
     for param in list(method.get_children()):
         if param.kind == clang.cindex.CursorKind.PARM_DECL:
-            parambytes += param.type.get_size()
+            parambytes += int(math.ceil(param.type.get_size()/4.0) * 4)
     cfile.write("DEFINE_THISCALL_WRAPPER(%s_%s, %s)\n" % (winclassname, used_name, parambytes))
     cpp_h.write("extern ")
     if method.result_type.spelling.startswith("ISteam"):
@@ -541,7 +544,7 @@ def handle_method(cfile, classname, winclassname, cppname, method, cpp, cpp_h, e
                 unnamed = chr(ord(unnamed) + 1)
             elif param.type.kind == clang.cindex.TypeKind.POINTER and \
                     param.type.get_pointee().spelling in wrapped_classes:
-                cfile.write(", create_Linux%s(%s)" % (param.type.get_pointee().spelling, param.spelling))
+                cfile.write(", create_Linux%s(%s, \"%s\")" % (param.type.get_pointee().spelling, param.spelling, winclassname))
                 cpp.write("(%s)%s" % (param.type.spelling, param.spelling))
             elif path_conv and param.spelling in path_conv["w2l_names"]:
                 cfile.write(", %s ? lin_%s : NULL" % (param.spelling, param.spelling))
@@ -848,14 +851,14 @@ for sdkver in sdk_versions:
         if not os.path.isfile(input_name):
             continue
         index = clang.cindex.Index.create()
-        linux_build = index.parse(input_name, args=['-x', 'c++', '-m32', '-Isteamworks_sdk_%s/' % sdkver, '-I/usr/lib/clang/7.0.0/include/'])
+        linux_build = index.parse(input_name, args=['-x', 'c++', '-m32', '-Isteamworks_sdk_%s/' % sdkver, '-I/usr/lib/clang/7.0.1/include/'])
 
         diagnostics = list(linux_build.diagnostics)
         if len(diagnostics) > 0:
             print('There were parse errors')
             pprint.pprint(diagnostics)
         else:
-            windows_build = index.parse(input_name, args=['-x', 'c++', '-m32', '-Isteamworks_sdk_%s/' % sdkver, '-I/usr/lib/clang/7.0.0/include/', '-mms-bitfields', '-U__linux__', '-Wno-incompatible-ms-struct'])
+            windows_build = index.parse(input_name, args=['-x', 'c++', '-m32', '-Isteamworks_sdk_%s/' % sdkver, '-I/usr/lib/clang/7.0.1/include/', '-mms-bitfields', '-U__linux__', '-Wno-incompatible-ms-struct'])
             diagnostics = list(windows_build.diagnostics)
             if len(diagnostics) > 0:
                 print('There were parse errors (windows build)')
