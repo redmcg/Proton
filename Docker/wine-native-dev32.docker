@@ -1,0 +1,10 @@
+FROM i386/ubuntu:18.04
+
+ARG DEBIAN_FRONTEND="noninteractive"
+
+RUN sed -i 's/# \(deb-src .* universe\)/\1/' /etc/apt/sources.list
+RUN apt-get update
+RUN apt-get install libvulkan-dev -y
+RUN apt-get build-dep wine -y
+
+CMD [ "/bin/bash", "--login" ]
