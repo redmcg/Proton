@@ -216,8 +216,6 @@ $(OBJ_DIRS):
 $(DST_DIR):
 	mkdir -p $@
 
-DIST_VERSION := $(DST_DIR)/version
-DIST_PREFIX := $(DST_DIR)/share/default_pfx/
 DIST_LICENSE := $(DST_BASE)/LICENSE
 DIST_GECKO_DIR := $(DST_DIR)/share/wine/gecko
 DIST_GECKO32 := $(DIST_GECKO_DIR)/$(GECKO32_MSI)
@@ -227,7 +225,7 @@ DIST_FONTS := $(DST_DIR)/share/fonts
 DIST_TARGETS := $(DIST_GECKO32) $(DIST_GECKO64) \
                 $(DIST_FONTS) $(DIST_LICENSE)
 
-DEPLOY_COPY_TARGETS := $(DIST_COPY_TARGETS) $(DIST_VERSION) $(DIST_LICENSE)
+DEPLOY_COPY_TARGETS := $(DIST_COPY_TARGETS) $(DIST_LICENSE)
 
 $(DIST_LICENSE): $(LICENSE)
 	cp -a $< $@
@@ -272,31 +270,6 @@ ALL_TARGETS += dist
 GOAL_TARGETS += dist
 
 dist: $(DIST_TARGETS) wine | $(DST_DIR)
-	echo `date '+%s'` `GIT_DIR=$(abspath $(SRCDIR)/.git) git describe --tags` > $(DIST_VERSION)
-	cp $(DIST_VERSION) $(DST_BASE)/
-	rm -rf $(abspath $(DIST_PREFIX)) && \
-	WINEPREFIX=$(abspath $(DIST_PREFIX)) $(WINE_OUT_BIN) wineboot && \
-		WINEPREFIX=$(abspath $(DIST_PREFIX)) $(WINE_OUT_SERVER) -w && \
-		ln -s $(FONTLINKPATH)/LiberationSans-Regular.ttf $(abspath $(DIST_PREFIX))/drive_c/windows/Fonts/arial.ttf && \
-		ln -s $(FONTLINKPATH)/LiberationSans-Bold.ttf $(abspath $(DIST_PREFIX))/drive_c/windows/Fonts/arialbd.ttf && \
-		ln -s $(FONTLINKPATH)/LiberationSerif-Regular.ttf $(abspath $(DIST_PREFIX))/drive_c/windows/Fonts/times.ttf && \
-		ln -s $(FONTLINKPATH)/LiberationMono-Regular.ttf $(abspath $(DIST_PREFIX))/drive_c/windows/Fonts/cour.ttf
-#The use of "arial" here is for compatibility with programs that require that exact string. These links do not point to Arial.
-#The use of "times" here is for compatibility with programs that require that exact string. This link does not point to Times New Roman.
-#The use of "cour" here is for compatibility with programs that require that exact string. This link does not point to Courier New.
-
-deploy: dist | $(filter-out dist deploy install,$(MAKECMDGOALS))
-	mkdir -p $(DEPLOY_DIR) && \
-	cp -a $(DEPLOY_COPY_TARGETS) $(DEPLOY_DIR) && \
-	tar -C $(DST_DIR) -c . | gzip -c -1 > $(DEPLOY_DIR)/proton_dist.tar.gz
-	@echo "Created deployment tarball at "$(DEPLOY_DIR)"/proton_dist.tar.gz"
-
-install: dist | $(filter-out dist deploy install,$(MAKECMDGOALS))
-	if [ ! -d $(STEAM_DIR) ]; then echo >&2 "!! "$(STEAM_DIR)" does not exist, cannot install"; return 1; fi
-	mkdir -p $(STEAM_DIR)/compatibilitytools.d/$(BUILD_NAME)
-	cp -a $(DST_BASE)/* $(STEAM_DIR)/compatibilitytools.d/$(BUILD_NAME)
-	@echo "Installed Proton to "$(STEAM_DIR)/compatibilitytools.d/$(BUILD_NAME)
-	@echo "You may need to restart Steam to select this tool"
 
 .PHONY: module32 module64 module
 
