@@ -8,5 +8,5 @@ legacycompat="${scriptdir}/legacycompat"
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 DOWNLOADLOC="${DOWNLOADLOC:-$XDG_CACHE_HOME/createvdf}"
 
-"${scriptdir}/download.py" "${DOWNLOADLOC}" vcrun2015 dotnet40
-"${scriptdir}/createvdf.py" 359320 vcrun2015 "${DOWNLOADLOC}/vcredist/2015" dotnet40 "${DOWNLOADLOC}/DotNet/4.0"
+"${scriptdir}/download.py" "${DOWNLOADLOC}" dotnet40
+"${scriptdir}/createvdf.py" 359320 dotnet40 "${DOWNLOADLOC}/DotNet/4.0"
